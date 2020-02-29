@@ -158,7 +158,7 @@ module MakeStack (Element: SERIALIZE) : (STACK with type element = Element.t) =
 Exercise 1B: Now, make a module `IntStack` by applying the functor
 that you just defined to an appropriate module for serializing integers.
 ......................................................................*)
-module IntSerialize : SERIALIZE =
+module IntSerialize : (SERIALIZE with type t = int) =
   struct
     type t = int
     let serialize =
