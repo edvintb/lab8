@@ -4,6 +4,10 @@
                                 Part 2
  *)
 
+(*
+                               SOLUTION
+ *)
+       
 (* Objective:
 
 This lab practices concepts of functors. 
@@ -93,29 +97,6 @@ will act as an absrtaction barrier to prevent the extra functions from
 leaking out of the module.)
 ......................................................................*)
 
-(*     exception EmptyStack
-    type stack = int list
-
-    (* empty -- An empty stack *)
-    let empty : stack = []
-
-    (* push i s -- Adds an integer element i to the top of stack s *)
-    let push (i : int) (s : stack) : stack = i :: stack 
-
-    (* top s -- Returns the value of the topmost element on stack s,
-       raising the EmptyStack exception if there is no element to be
-       returned. *)
-    let top (s : stack) : int = match s with
-                                | [] -> raise (EmptyStack "Empty Stack")
-                                | hd :: tl -> hd
-
-    (* pop s -- Returns a stack with the topmost element from s
-       removed, raising the EmptyStack exception if there is no
-       element to be removed. *)
-    let pop (s : stack) : stack = match s with
-                                  | [] -> raise (EmptyStack "Empty Stack")
-                                  | hd :: tl -> tl *)
-
 module MakeStack (Element: SERIALIZE) : (STACK with type element = Element.t) =
   struct
     exception Empty
@@ -126,29 +107,29 @@ module MakeStack (Element: SERIALIZE) : (STACK with type element = Element.t) =
     let empty : stack = []
 
     let push (el : element) (s : stack) : stack =
-      el :: s ;;
+      el :: s
 
     let pop_helper (s : stack) : (element * stack) =
       match s with
       | [] -> raise Empty
-      | hd :: tl -> hd, tl ;;
+      | h :: t -> (h, t)
 
     let top (s : stack) : element =
-      fst (pop_helper s) ;;
+      fst (pop_helper s)
 
     let pop (s : stack) : stack =
-      snd (pop_helper s) ;;
+      snd (pop_helper s)
 
-    let map (f : element -> element) (s : stack) : stack =
-      List.map f s ;;
+    let map : (element -> element) -> stack -> stack =
+      List.map
 
-    let filter (f : element -> bool) (s : stack) : stack =
-      List.filter f s ;;
+    let filter : (element -> bool) -> stack -> stack =
+      List.filter
 
-    let fold_left (f : 'a -> element -> 'a) (init : 'a) (s : stack) : 'a =
-      List.fold_left f init s ;;
+    let fold_left : ('a -> element -> 'a) -> 'a -> stack -> 'a =
+      List.fold_left
 
-      let serialize (s : stack) : string =
+    let serialize (s : stack) : string =
       let string_join x y = Element.serialize y
                   ^ (if x <> "" then ":" ^ x else "") in
       fold_left string_join "" s
@@ -158,15 +139,21 @@ module MakeStack (Element: SERIALIZE) : (STACK with type element = Element.t) =
 Exercise 1B: Now, make a module `IntStack` by applying the functor
 that you just defined to an appropriate module for serializing integers.
 ......................................................................*)
+
+(* In the following solution, we are explicit about all module types,
+   while providing appropriate sharing constraints. *)
+  
 module IntSerialize : (SERIALIZE with type t = int) =
   struct
     type t = int
-    let serialize =
-      string_of_int
+    let serialize = string_of_int
   end ;;
 
-module IntStack : (STACK with type element = IntSerialize.t) = 
-  MakeStack (IntSerialize) ;;
+module IntStack : (STACK with type element = IntSerialize.t) =
+  MakeStack(IntSerialize) ;;
+
+(* It might be a good exercise to drop one or another of the sharing
+   constraints, or of the module typings, and see what happens. *)
 
 (*......................................................................
 Exercise 1C: Make a module `IntStringStack` that creates a stack whose
@@ -178,20 +165,25 @@ values as strings of the form:
 where N is the int, and S is the string. For instance, a stack with
 two elements might be serialized as the string
 
-    "(1, 'pushed first'):(2, 'pushed second')"     .
+    "(1,'pushed first'):(2,'pushed second')"     .
 
 For this oversimplified serialization function, you may assume that
 the string will be made up of alphanumeric characters only.
 ......................................................................*)
 
-module IntStringStack : SERIALIZE= 
-struct 
-  type t = int * string
-  let serialize (n, s) = 
-    "(" ^ string_of_int n ^ "," ^ s ^ ")"
-end ;;
+(* This time, we left off the typings for the modules
+   `IntStringSerialize` and `IntStringStack`. Can you add them in such
+   a way that the modules are properly abstracted but can still be
+   used to construct and manipulate stacks? *)
+    
+module IntStringSerialize =
+  struct
+    type t = (int * string)
+    let serialize (n, s) =
+      "(" ^ string_of_int n ^ ",'" ^ s ^ "')"
+  end ;;
 
-module IntStringSerialize : (STACK with type element = IntStringStack.t) =
-  MakeStack (IntStringStack) ;;
+module IntStringStack =
+  MakeStack(IntStringSerialize) ;;
 
 
