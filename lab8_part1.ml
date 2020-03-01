@@ -222,7 +222,7 @@ module MakeSafeInterval (Endpoint : ORDERED_TYPE) : INTERVAL =
     let is_empty (intvl : interval) : bool =
       match intvl with
       | Empty -> true
-      | Interval _ -> false
+      | Interval (_, _) -> false
 
     (* contains intvl x -- Returns true if and only if the value `x`
        is contained within `intvl` *)
@@ -308,12 +308,12 @@ module satisfying INTERVAL *with appropriate sharing constraints
 to allow the creation of generic interval modules*.
 ......................................................................*)
 
-module MakeBestInterval (Endpoint : ORDERED_TYPE)
-                      : (INTERVAL with type endpoint = Endpoint.t) = 
+module MakeBestInterval (Endpoint : ORDERED_TYPE) : (INTERVAL with type endpoint = Endpoint.t) = 
   struct
     type endpoint = Endpoint.t
-    type interval = | Interval of endpoint * endpoint
-                    | Empty
+    type interval = 
+      | Interval of endpoint * endpoint
+      | Empty
 
     (* create low high -- Returns a new interval covering `low` to
        `high` inclusive. If `low` > `high`, then the interval is
@@ -327,7 +327,7 @@ module MakeBestInterval (Endpoint : ORDERED_TYPE)
     let is_empty (intvl : interval) : bool =
       match intvl with
       | Empty -> true
-      | Interval _ -> false
+      | Interval (_, _) -> false
 
     (* contains intvl x -- Returns true if and only if the value `x`
        is contained within `intvl` *)
@@ -348,8 +348,7 @@ module MakeBestInterval (Endpoint : ORDERED_TYPE)
       | Interval (low1, high1), Interval (low2, high2) ->
          let (_, low), (high, _)  = ordered low1 low2, ordered high1 high2 in
          create low high
-  end
-;;
+  end ;;
 
 (* We now have a fully functioning functor that can create interval
 modules of whatever type we want, with the appropriate abstraction
@@ -371,9 +370,8 @@ instead?
     IntBestInterval.is_empty (IntBestInterval.Interval (4, 3)) ;;
 ......................................................................*)
 
-module IntBestInterval =
-  MakeBestInterval
-    (struct 
-      type t = int 
-      let compare = Stdlib.compare
-    end) ;;
+module IntBestInterval = MakeBestInterval
+(struct 
+  type t = int 
+  let compare = Stdlib.compare
+end) ;;
